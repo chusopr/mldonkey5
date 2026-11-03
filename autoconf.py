@@ -77,6 +77,11 @@ for k, v in networks.items():
     argparser.add_argument(f"--disable-{v['library'] if 'library' in v else k}", dest=k, action="store_const", const=False, default=v["default"],
                            help=f"Disable {v['description']} network{' (default)' if not v['default'] else ''}")
 
+argparser.add_argument("--enable-upnp-natpmp", dest="upnp_natpmp", action="store_const", const=True, default=True,
+                        help=f"Enable the use of libminiupnpc and libnatpmp")
+argparser.add_argument("--disable-upnp-natpmp", dest="upnp_natpmp", action="store_const", const=False, default=True,
+                        help=f"Disable the use of libminiupnpc and libnatpmp")
+
 args = vars(argparser.parse_args())
 
 def get_perl_path():
@@ -212,7 +217,7 @@ has_gd_jpg = True
 bzip2 = True
 magic = True
 magic_works = "ref false"
-upnp_natpmp = True
+upnp_natpmp = args["upnp_natpmp"]
 
 with open(target_path, "w") as f:
     f.write(f'let perl_path = "{perl_path}"\n')
@@ -277,3 +282,8 @@ with open(networks_target_path, "w") as f:
     ))""")
 
 print(f"Wrote dune network selection to {networks_target_path}")
+
+with open(os.path.join(current_script_dir, "src", "utils", "net", "upnp_cflags.sexp"), "w") as f:
+    f.write("(-DENABLE_UPNP_NATPMP)" if args["upnp_natpmp"] else "()")
+with open(os.path.join(current_script_dir, "src", "upnp_link_flags.sexp"), "w") as f:
+    f.write("(-cclib -lminiupnpc -cclib -lnatpmp)" if args["upnp_natpmp"] else "()")
